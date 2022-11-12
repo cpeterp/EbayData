@@ -1,6 +1,11 @@
 .vscode
 __pycache__
-*.ipynb
-*.pkl
-*.xlsx
 *.pyc
+env/
+# Temp files
+~*
+chromedriver
+chromedriver.exe
+
+# Cookie
+cookie.txt

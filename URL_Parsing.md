@@ -93,12 +93,12 @@
     
 ## Unused Parameters
 *These are added to the URL in a browser,but I can't tell what they do. They are not needed to make a request, and can be omitted*
-* **_fsrp**
+* **_fsrp**: 1
     * Purpose unclear
     * default: 1
-* **rt**
+* **rt**: "nc"
     * Purpose unclear
     * default: "nc"
-* **_from**
+* **_from**: "R40"
     * Purpose unclear
     * default: "R40"

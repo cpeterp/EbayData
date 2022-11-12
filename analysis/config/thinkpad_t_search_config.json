@@ -1,0 +1,15 @@
+{
+    "options": {
+    "_fsrp":1, 
+    "rt":"nc", 
+    "_from":"R40", 
+    "RAM%20Size": "16%20GB", 
+    "Processor": "AMD%20Ryzen%207", 
+    "Operating%20System": "Windows%2011%20Pro", 
+    "_sacat": 0, 
+    "LH_Complete": 1, 
+    "LH_Sold": 1, 
+    "LH_ItemCondition":"1000|1500|2000|2010|2020|2030|2500|3000", 
+    "_ipg": 240
+}
+}
