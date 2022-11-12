@@ -1,3 +1,5 @@
-Install the ChromeDriver in the `resources` folder. 
+# EbayData
+A webscraper for pulling data about listings from eBay. Includes analysis listing data for iPhones, Thinkpads and MacBook Pros over time. See the thinkpad notebook for a demonstration
 
-You can find downloads here: https://sites.google.com/chromium.org/driver/downloads. Just select the best version for your system.
+## Setup
+Simply clone the thinkpad noebook and adjust parameters as neccessary.
