@@ -1,19 +1,26 @@
 from bs4 import BeautifulSoup
+import getpass
+from pathlib import Path
 import pandas as pd
 import requests
 import re
+from selenium.webdriver.chrome.service import Service
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.chrome.options import Options
 import time
 import json
 import warnings
 
-def scraper(query_text:str, options:dict = None, cookie:str = None, 
+def scraper(query_text:str, options:dict = None, cookie:dict = None, 
             verbose:bool = False):
     """
     Scapes ebay using a search term and a set of search options. Search options 
     can be gleaned from a traditional search of eBay"s website. 
 
     params:
-    - query_text: The search text (as you would type it into eBay"s search bar)
+    - query_text: The search text (as you would type it into eBay's search bar)
     - options: query options passed to the search request. These are documented 
         in the URL_parsing.md file
     - cookie: The cookie (as text) from your browser, which can be copied after 
@@ -23,14 +30,10 @@ def scraper(query_text:str, options:dict = None, cookie:str = None,
     """
     base_url = "https://www.ebay.com/sch/i.html?"
     headers= {
-        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/"\
-        "537.36 (KHTML, like Gecko) Chrome/105.0.0.0 Safari/537.36 "\
-        "Edg/105.0.1343.53"
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/105.0.0.0 Safari/537.36 Edg/105.0.1343.53"
     }
     
-    if cookie is not None:
-        headers["cookie"] = cookie
-    else:
+    if cookie is None:
         warnings.warn("No cookie set. Without a cookie, some data will not be"\
                       " available")
     
@@ -45,7 +48,7 @@ def scraper(query_text:str, options:dict = None, cookie:str = None,
         
         options["_nkw"] = query_text
         options["_pgn"] = read_page
-        r = requests.get(base_url, params=options, headers=headers)
+        r = requests.get(base_url, params=options, headers=headers, cookies=cookie)
         data = r.text
         soup = BeautifulSoup(data, "html5lib")
     
@@ -109,6 +112,85 @@ def scraper(query_text:str, options:dict = None, cookie:str = None,
     listing_data["price"] = listing_data["price"].apply(__format_price)
     listing_data["sold_date"] = pd.to_datetime(listing_data["sold_date"])
     return listing_data
+
+def retrieve_cookies():
+    """
+    Uses Selenium to retrieve cookies form Ebay for webscraping.
+    """
+    # Default variables
+    package_dir = Path(__file__).parent
+    driver_path = package_dir.parent / "resources/chromedriver.exe"
+
+    # Load configs
+    with open(package_dir/"lib/search_config.json", "rt") as F:
+        config = json.load(F)
+
+    # Load ebay credentials
+    login_info_path = package_dir/".env/login_info.json"
+    try:
+        with open(login_info_path, "rt") as F:
+            login_info = json.load(F)
+    except:
+        if not login_info_path.exists():
+            login_info_path.mkdir(parents=True)
+        print("Enter your Ebay credentials.")
+        usr = getpass.getuser("Ebay Username: ")
+        psw = getpass.getpass("Ebay Password: ")
+        login_info = {"username":usr, "password":psw}
+        with open(login_info_path, "wt") as F:
+            json.dump(login_info, F)
+    
+    # Selenium start options
+    chrome_options = Options()
+    chrome_options.add_argument("--window-size=%s" % config["window_size"])
+
+    print(str(driver_path))
+    service = Service(executable_path=str(driver_path))
+    driver = webdriver.Chrome(service=service)
+    driver.delete_all_cookies()
+    driver.get("https://signin.ebay.com/ws/eBayISAPI.dll")
+    time.sleep(1)
+
+    while __is_captcha(driver):
+        time.sleep(0.5)
+
+    time.sleep(1)
+    email_address = driver.find_element(By.XPATH, "//input[@id='userid']")
+    email_address.clear()
+    email_address.send_keys(login_info['username'])
+    email_address.send_keys(Keys.RETURN)
+    time.sleep(1)
+
+    while __is_captcha(driver):
+        time.sleep(0.5)
+
+    time.sleep(1)
+    password = driver.find_element(By.XPATH, "//input[@id='pass']")
+    password.clear()
+    password.send_keys(login_info['password'])
+    password.send_keys(Keys.RETURN)
+    time.sleep(1)
+
+    while __is_captcha(driver):
+        time.sleep(0.5)
+
+    time.sleep(1)
+    send_cookies = {}
+    all_cookies = driver.get_cookies()
+    for cookie in all_cookies:
+        if cookie["name"] in config["cookie_names"]:
+            send_cookies[cookie["name"]] = cookie["value"]
+
+    return send_cookies
+
+def __is_captcha(driver):
+    elements = \
+        driver.find_elements(By.XPATH, "//iframe[@id='captchaFrame']") +\
+        driver.find_elements(By.XPATH, "//form[@id='captcha_form']")
+    if len(elements) > 0:
+        return True
+    else:
+        return False
 
 def __listing_to_row(listing):
     """ Extract name, price, date, tags, and link from a li element"""

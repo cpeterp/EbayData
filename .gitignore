@@ -1,9 +1,13 @@
 .vscode
+.env
 __pycache__
 *.pyc
 env/
+
+
 # Temp files
 ~*
+
 chromedriver
 chromedriver.exe
 
